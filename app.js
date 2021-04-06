@@ -1,105 +1,28 @@
-//const request = require('request')
-const path = require('path')
-const express = require('express')
-const hbs = require('hbs')
-const geocode = require('./units/geocode')
-const forecast = require('./units/forecast')
+//console.log('Client side javascript file is loaded!')
 
-const app = express()
+const weatherForm = document.querySelector('form')
+const search = document.querySelector('input')
+const messageOne = document.querySelector('#message-1')
+const messageTwo = document.querySelector('#message-2')
 
-//Define paths for express config.
-const publicDirectoryPath = path.join(__dirname,'../public')
-const viewsPath = path.join(__dirname,'../templates/views')
-const partialsPath = path.join(__dirname,'../templates/partials')
+weatherForm.addEventListener('submit',(e)=>{
+        e.preventDefault()
+   
+      const location = search.value
 
-//Setup handlebars engine and views locations.
-app.set('view engine','hbs')
-app.set('views',viewsPath)
-hbs.registerPartials(partialsPath)
+        messageOne.textContent = 'loading...'
+        messageTwo.textContent = ''
 
-//Setup static directory.
-app.use(express.static(publicDirectoryPath))
-
-app.get('',(req,res)=>{
-     res.render('index',{
-         title:'Weather app',
-         name:'komal'
-   })
+        fetch("http://localhost:3000/weather?address="+location).then((response)=>{
+       response.json().then((data)=>{
+         if(data.error){
+            messageOne.textContent = data.error
+     }
+else{
+ messageOne.textContent = data.location
+        messageTwo.textContent = data.forecast
+ }
+     })
+  })
   })
 
-app.get('/about',(req,res)=>{
-   res.render('about',{
-       title:'About me',
-       name:'Komal'
-  })
-})
-
-
-app.get('/help',(req,res)=>{
-    res.render('help',{ 
-              title:'help',
-              helptext:'This is some helpful text',
-              name:'komal'
-   })
-})
-
-
-
-app.get('/weather',(req,res)=>{
-
-    if(!req.query.address){
-    return res.send({
-        error:'you must provide an error.'
-    })
-  }
-
-geocode(req.query.address,(error,{latitude,longitude,location} = {})=>{
-     if(error){
-        return res.send({error})
-    } 
-
-    forecast(latitude,longitude,(error,forecastData)=>{
-              if(error){
-                    return res.send({error})
-       }
-             res.send({
-              forecast:forecastData,
-              location,
-              address:req.query.address
-            })
-    })      
-  })
-})
-
-app.get('/products',(req,res)=>{
-     if(!req.query.search){
-       return res.send({
-           error:"you must provide a search term."
-      })
-  }
-       console.log(req.query.search)
-    res.send({
-          products:[]
-  })
-})
-
-app.get('/help/*',(req,res)=>{
-     res.render('404',{
-    title:'404',
-       name:'komal',
-       errorMessage:'Help article not found'
- })
-})
-
-app.get('*',(req,res)=>{
-   res.render('404',{
-       title:'404',
-       name:'komal',
-       errorMessage:'Page not found'
-  })
-})
-
-app.listen(3000, () =>{
-   console.log('Server is up on port 3000')
- 
- })
